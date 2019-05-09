@@ -1,0 +1,25 @@
+{
+  "name": "pbrt",
+  "version": "0.1.0",
+  "license": "MIT",
+  "esy": {
+    "build": "refmterr dune build -p #{self.name}",
+    "NOTE": "Optional release Section. Customizes result of `esy release`",
+    "release": { "bin": [ "Hello" ] }
+  },
+  "scripts": { "test": "esy x Hello", "doc": "esy dune build @doc" },
+  "dependencies": {
+    "@esy-ocaml/reason": "*",
+    "@opam/dune": "*",
+    "@opam/fmt": "*",
+    "@opam/imagelib": "20180522",
+    "@opam/logs": "*",
+    "ocaml": "~4.7.0",
+    "refmterr": "*"
+  },
+  "devDependencies": {
+    "@opam/merlin": "*",
+    "ocaml": "~4.7.0",
+    "@opam/odoc": "*"
+  }
+}

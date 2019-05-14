@@ -4,6 +4,8 @@ module Ray = {
     direction: Vector3.t,
   };
 
+  let make = (~origin, ~direction) => {origin, direction};
+
   let create_prime = (~x, ~y, ~camera: Camera.t) => {
     let x = float_of_int(x);
     let y = float_of_int(y);
@@ -19,10 +21,10 @@ module Ray = {
 
     let sensor_y = (1.0 -. (y +. 0.5) /. height *. 2.0) *. fov_adjustment;
 
-    {
-      origin: Point.zero(),
-      direction:
+    make(
+      ~origin=Point.zero(),
+      ~direction=
         Vector3.make(~x=sensor_x, ~y=sensor_y, ~z=-1.0) |> Vector3.normalize,
-    };
+    );
   };
 };

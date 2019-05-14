@@ -112,12 +112,14 @@ module Intersection = {
 };
 
 type t = {
+  shadow_bias: float,
   camera: Camera.t,
   entities: list(Element.t),
-  light: Light.t,
+  lights: list(Light.t),
 };
 
-let make = (~width, ~height, ~fov, ~background, ~light, ~entities) => {
+let make = (~width, ~height, ~fov, ~background, ~lights, ~entities) => {
+  shadow_bias: 1e-13,
   camera: {
     width,
     height,
@@ -125,7 +127,7 @@ let make = (~width, ~height, ~fov, ~background, ~light, ~entities) => {
     background,
   },
   entities,
-  light,
+  lights,
 };
 
 let trace = (scene, ~ray) => {

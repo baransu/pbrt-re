@@ -30,6 +30,14 @@ let mul = (t, other) => {
 
 let ( * ) = mul;
 
+let add = (t, other) => {
+  r: t.r +. other.r,
+  g: t.g +. other.g,
+  b: t.b +. other.b,
+};
+
+let (+) = add;
+
 let by_scalar = (scalar, t) => {
   r: t.r *. scalar,
   g: t.g *. scalar,

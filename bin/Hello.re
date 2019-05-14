@@ -15,39 +15,67 @@ let render = (scene: Scene.t) => {
         (
           switch (scene |> Scene.trace(~ray)) {
           | Some(intersection) =>
-            let origin = ray.origin |> Vector3.from_point;
-            let direction =
-              ray.direction |> Vector3.by_scalar(intersection.distance);
+            scene.lights
+            |> List.fold_left(
+                 (color, light: Light.t) => {
+                   let origin = ray.origin |> Vector3.from_point;
+                   let direction =
+                     ray.direction |> Vector3.by_scalar(intersection.distance);
 
-            let hit_point = Vector3.(origin + direction) |> Vector3.to_point;
+                   let hit_point =
+                     Vector3.(origin + direction) |> Vector3.to_point;
 
-            let surface_normal =
-              intersection.element |> Scene.Element.surface_normal(~hit_point);
+                   let surface_normal =
+                     intersection.element
+                     |> Scene.Element.surface_normal(~hit_point);
 
-            // Logs.app(m =>
-            //   m("intersection.distance: %f", intersection.distance)
-            // );
+                   let direction_to_light =
+                     light.direction |> Vector3.normalize |> Vector3.neg;
 
-            let direction_to_light =
-              scene.light.direction |> Vector3.normalize |> Vector3.neg;
+                   let shadow_ray =
+                     Rendering.Ray.make(
+                       ~origin=
+                         Vector3.(
+                           (hit_point |> from_point)
+                           + (surface_normal |> by_scalar(scene.shadow_bias))
+                           |> to_point
+                         ),
+                       ~direction=direction_to_light,
+                     );
 
-            let partial_light_power =
-              Vector3.dot(surface_normal, direction_to_light);
+                   let in_light =
+                     scene |> Scene.trace(~ray=shadow_ray) |> Option.is_none;
 
-            // Logs.app(m => m("partial_light_power: %f", partial_light_power));
+                   let light_intensity =
+                     if (in_light) {
+                       light.intensity;
+                     } else {
+                       0.0;
+                     };
 
-            let light_power =
-              (partial_light_power |> max(0.0)) *. scene.light.intensity;
+                   let light_power =
+                     (
+                       Vector3.dot(surface_normal, direction_to_light)
+                       |> max(0.0)
+                     )
+                     *. light_intensity;
 
-            let light_reflected =
-              Scene.Element.albedo(intersection.element) /. FloatExtra.pi;
+                   let light_reflected =
+                     Scene.Element.albedo(intersection.element)
+                     /. FloatExtra.pi;
 
-            Color.(
-              Scene.Element.color(intersection.element) * scene.light.color
-            )
-            |> Color.by_scalar(light_power)
-            |> Color.by_scalar(light_reflected)
-            |> Color.clamp;
+                   let current_light_color =
+                     Color.(
+                       Scene.Element.color(intersection.element) * light.color
+                     )
+                     |> Color.by_scalar(light_power)
+                     |> Color.by_scalar(light_reflected);
+
+                   Color.(color + current_light_color);
+                 },
+                 Color.black(),
+               )
+            |> Color.clamp
 
           | None => scene.camera.background
           }
@@ -69,12 +97,18 @@ let white = Color.make(~r=1.0, ~g=1.0, ~b=1.0);
 let scene =
   Scene.(
     make(
-      ~light=
+      ~lights=[
         Light.make(
           ~color=white,
           ~direction=Vector3.make(~x=-0.25, ~y=-1.0, ~z=-1.0),
-          ~intensity=20.0,
+          ~intensity=10.0,
         ),
+        Light.make(
+          ~color=white,
+          ~direction=Vector3.make(~x=0.25, ~y=-1.0, ~z=-1.0),
+          ~intensity=10.0,
+        ),
+      ],
       ~width=800,
       ~height=800,
       ~fov=120.0,

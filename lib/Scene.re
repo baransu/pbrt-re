@@ -3,9 +3,15 @@ module Plane = {
     origin: Point.t,
     normal: Vector3.t,
     color: Color.t,
+    albedo: float,
   };
 
-  let make = (~origin, ~normal, ~color) => {origin, normal, color};
+  let make = (~origin, ~normal, ~color, ~albedo) => {
+    origin,
+    normal,
+    color,
+    albedo,
+  };
 
   let intersect = (t, ~ray: Rendering.Ray.t) => {
     let denom = Vector3.dot(t.normal, ray.direction);
@@ -21,6 +27,10 @@ module Plane = {
       None;
     };
   };
+
+  let surface_normal = (~hit_point as _, t) => {
+    t.normal |> Vector3.neg;
+  };
 };
 
 module Sphere = {
@@ -28,9 +38,15 @@ module Sphere = {
     center: Point.t,
     radius: float,
     color: Color.t,
+    albedo: float,
   };
 
-  let make = (~center, ~radius, ~color) => {center, radius, color};
+  let make = (~center, ~radius, ~color, ~albedo) => {
+    center,
+    radius,
+    color,
+    albedo,
+  };
 
   let intersect = (t, ~ray: Rendering.Ray.t) => {
     let l = Point.(t.center - ray.origin) |> Vector3.from_point;
@@ -54,6 +70,10 @@ module Sphere = {
       };
     };
   };
+
+  let surface_normal = (~hit_point, t) => {
+    Point.(hit_point - t.center) |> Vector3.from_point |> Vector3.normalize;
+  };
 };
 
 module Element = {
@@ -66,10 +86,20 @@ module Element = {
     | Sphere(sphere) => sphere.color
     | Plane(plane) => plane.color;
 
+  let albedo =
+    fun
+    | Sphere(sphere) => sphere.albedo
+    | Plane(plane) => plane.albedo;
+
   let intersect = (~ray) =>
     fun
     | Sphere(sphere) => sphere |> Sphere.intersect(~ray)
     | Plane(plane) => plane |> Plane.intersect(~ray);
+
+  let surface_normal = (~hit_point) =>
+    fun
+    | Sphere(sphere) => sphere |> Sphere.surface_normal(~hit_point)
+    | Plane(plane) => plane |> Plane.surface_normal(~hit_point);
 };
 
 module Intersection = {
@@ -84,9 +114,10 @@ module Intersection = {
 type t = {
   camera: Camera.t,
   entities: list(Element.t),
+  light: Light.t,
 };
 
-let make = (~width, ~height, ~fov, ~background, ~entities) => {
+let make = (~width, ~height, ~fov, ~background, ~light, ~entities) => {
   camera: {
     width,
     height,
@@ -94,6 +125,7 @@ let make = (~width, ~height, ~fov, ~background, ~entities) => {
     background,
   },
   entities,
+  light,
 };
 
 let trace = (scene, ~ray) => {

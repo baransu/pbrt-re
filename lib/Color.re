@@ -21,3 +21,23 @@ let to_rgb = (t): Rgb.t => {
   g: t.g *. 255.0 |> int_of_float,
   b: t.b *. 255.0 |> int_of_float,
 };
+
+let mul = (t, other) => {
+  r: t.r *. other.r,
+  g: t.g *. other.g,
+  b: t.b *. other.b,
+};
+
+let ( * ) = mul;
+
+let by_scalar = (scalar, t) => {
+  r: t.r *. scalar,
+  g: t.g *. scalar,
+  b: t.b *. scalar,
+};
+
+let clamp = t => {
+  r: t.r |> min(1.0) |> max(0.0),
+  g: t.g |> min(1.0) |> max(0.0),
+  b: t.b |> min(1.0) |> max(0.0),
+};

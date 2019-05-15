@@ -30,7 +30,7 @@ let render = (scene: Scene.t) => {
                      |> Scene.Element.surface_normal(~hit_point);
 
                    let direction_to_light =
-                     light.direction |> Vector3.normalize |> Vector3.neg;
+                     light |> Light.direction_from(~hit_point);
 
                    let shadow_ray =
                      Rendering.Ray.make(
@@ -43,12 +43,21 @@ let render = (scene: Scene.t) => {
                        ~direction=direction_to_light,
                      );
 
+                   let shadow_intersection =
+                     scene |> Scene.trace(~ray=shadow_ray);
+
                    let in_light =
-                     scene |> Scene.trace(~ray=shadow_ray) |> Option.is_none;
+                     shadow_intersection
+                     |> Option.map((intersection: Scene.Intersection.t) => {
+                          let light_distance =
+                            light |> Light.distance(~hit_point);
+                          intersection.distance > light_distance;
+                        })
+                     |> Option.get_default(true);
 
                    let light_intensity =
                      if (in_light) {
-                       light.intensity;
+                       light |> Light.intensity(~hit_point);
                      } else {
                        0.0;
                      };
@@ -64,9 +73,10 @@ let render = (scene: Scene.t) => {
                      Scene.Element.albedo(intersection.element)
                      /. FloatExtra.pi;
 
+                   let light_color = light |> Light.color;
                    let current_light_color =
                      Color.(
-                       Scene.Element.color(intersection.element) * light.color
+                       Scene.Element.color(intersection.element) * light_color
                      )
                      |> Color.by_scalar(light_power)
                      |> Color.by_scalar(light_reflected);
@@ -98,15 +108,23 @@ let scene =
   Scene.(
     make(
       ~lights=[
-        Light.make(
-          ~color=white,
-          ~direction=Vector3.make(~x=-0.25, ~y=-1.0, ~z=-1.0),
-          ~intensity=10.0,
+        Light.(
+          Directional(
+            Directional.make(
+              ~color=white,
+              ~direction=Vector3.make(~x=-0.25, ~y=-1.0, ~z=-1.0),
+              ~intensity=10.0,
+            ),
+          )
         ),
-        Light.make(
-          ~color=white,
-          ~direction=Vector3.make(~x=0.25, ~y=-1.0, ~z=-1.0),
-          ~intensity=10.0,
+        Light.(
+          Directional(
+            Directional.make(
+              ~color=white,
+              ~direction=Vector3.make(~x=0.25, ~y=-1.0, ~z=-1.0),
+              ~intensity=10.0,
+            ),
+          )
         ),
       ],
       ~width=800,

@@ -14,6 +14,12 @@ let get_exn = t =>
   | None => raise(None_get)
   };
 
+let get_default = (default, t) =>
+  switch (t) {
+  | Some(t) => t
+  | None => default
+  };
+
 let is_none = t =>
   switch (t) {
   | None => true
